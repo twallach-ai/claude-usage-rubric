@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Model × Effort Rubric</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2333;
+    --border: #2a2f42;
+    --text: #e4e7f0;
+    --muted: #7a8099;
+    --haiku: #4da8da;
+    --sonnet: #7c6af7;
+    --opus: #f7a24b;
+    --low: #3db87a;
+    --med: #f0c040;
+    --high: #f77c6a;
+    --max: #e040fb;
+    --accent: #4da8da;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .page-header {
+    max-width: 1100px;
+    margin: 0 auto 2.5rem;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    max-width: 620px;
+  }
+
+  /* TAB NAV */
+  .tab-nav {
+    max-width: 1100px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  .tab-content { display: none; max-width: 1100px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* MODEL CARDS */
+  .model-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .model-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+
+  .model-card.haiku { border-top: 3px solid var(--haiku); }
+  .model-card.sonnet { border-top: 3px solid var(--sonnet); }
+  .model-card.opus { border-top: 3px solid var(--opus); }
+
+  .model-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  .model-card.haiku .model-name { color: var(--haiku); }
+  .model-card.sonnet .model-name { color: var(--sonnet); }
+  .model-card.opus .model-name { color: var(--opus); }
+
+  .model-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-bottom: 10px;
+  }
+
+  .haiku .model-tag { background: rgba(77,168,218,0.15); color: var(--haiku); }
+  .sonnet .model-tag { background: rgba(124,106,247,0.15); color: var(--sonnet); }
+  .opus .model-tag { background: rgba(247,162,75,0.15); color: var(--opus); }
+
+  .model-desc { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+
+  .model-meta { display: flex; flex-direction: column; gap: 5px; }
+  .meta-row { display: flex; justify-content: space-between; font-size: 12px; }
+  .meta-label { color: var(--muted); }
+  .meta-val { font-weight: 500; }
+
+  /* EFFORT CARDS */
+  .effort-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 2rem;
+  }
+
+  .effort-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .effort-card.low { border-top: 3px solid var(--low); }
+  .effort-card.med { border-top: 3px solid var(--med); }
+  .effort-card.high { border-top: 3px solid var(--high); }
+  .effort-card.max { border-top: 3px solid var(--max); }
+
+  .effort-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .low .effort-label { color: var(--low); }
+  .med .effort-label { color: var(--med); }
+  .high .effort-label { color: var(--high); }
+  .max .effort-label { color: var(--max); }
+
+  .effort-desc { color: var(--muted); font-size: 12px; margin-bottom: 10px; line-height: 1.5; }
+  .effort-use { font-size: 12px; color: var(--text); }
+
+  /* MAIN GRID TABLE */
+  .grid-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 2rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 760px;
+  }
+
+  thead tr {
+    background: var(--surface2);
+  }
+
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 11px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .task-name { font-weight: 500; color: var(--text); }
+  .task-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .badge-haiku { background: rgba(77,168,218,0.15); color: var(--haiku); }
+  .badge-sonnet { background: rgba(124,106,247,0.15); color: var(--sonnet); }
+  .badge-opus { background: rgba(247,162,75,0.15); color: var(--opus); }
+  .badge-low { background: rgba(61,184,122,0.15); color: var(--low); }
+  .badge-med { background: rgba(240,192,64,0.15); color: var(--med); }
+  .badge-high { background: rgba(247,124,106,0.15); color: var(--high); }
+  .badge-max { background: rgba(224,64,251,0.15); color: var(--max); }
+
+  .why-note { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* TARA GRID */
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .savings-flag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: rgba(61,184,122,0.12);
+    color: var(--low);
+    letter-spacing: 0.04em;
+  }
+
+  .warning-flag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: rgba(247,162,75,0.12);
+    color: var(--opus);
+    letter-spacing: 0.04em;
+  }
+
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 1.5rem;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .callout strong { color: var(--text); }
+
+  /* PRINCIPLES */
+  .principle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  .principle-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .principle-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .principle-body { font-size: 12px; color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="eyebrow">Decision Guide</div>
+  <h1>Claude Model × Effort Rubric</h1>
+  <p class="subtitle">A practical framework for matching the right model and effort level to the right task — including a view calibrated to your actual work.</p>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('overview')">Models & Effort</button>
+  <button class="tab-btn" onclick="switchTab('general')">General Task Grid</button>
+  <button class="tab-btn" onclick="switchTab('tara')">Your Work at PI + H2</button>
+  <button class="tab-btn" onclick="switchTab('principles')">Decision Principles</button>
+</div>
+
+<!-- TAB 1: OVERVIEW -->
+<div id="tab-overview" class="tab-content active">
+
+  <div class="section-label">The Three Models</div>
+  <div class="model-row">
+    <div class="model-card haiku">
+      <div class="model-name">HAIKU 4.5</div>
+      <div class="model-tag">Fast · Cheap · Routine</div>
+      <p class="model-desc">Lightweight and fast. Handles tasks that don't require reasoning depth — formatting, retrieval, classification, simple generation. Think of this as the model that does the work when the answer is already in the room.</p>
+      <div class="model-meta">
+        <div class="meta-row"><span class="meta-label">Best for</span><span class="meta-val">Speed-first, high volume</span></div>
+        <div class="meta-row"><span class="meta-label">Effort available</span><span class="meta-val">Low · Med</span></div>
+        <div class="meta-row"><span class="meta-label">Relative cost</span><span class="meta-val">● ○ ○</span></div>
+      </div>
+    </div>
+    <div class="model-card sonnet">
+      <div class="model-name">SONNET 4.6</div>
+      <div class="model-tag">Workhorse · Balanced · Default</div>
+      <p class="model-desc">The production default. Strong reasoning, fast turnaround, and cost-efficient enough for sustained daily use. It's the right choice for 80% of professional knowledge work — the model you should feel guilty for <em>not</em> using.</p>
+      <div class="model-meta">
+        <div class="meta-row"><span class="meta-label">Best for</span><span class="meta-val">Most daily work</span></div>
+        <div class="meta-row"><span class="meta-label">Effort available</span><span class="meta-val">Low · Med · High · Max</span></div>
+        <div class="meta-row"><span class="meta-label">Relative cost</span><span class="meta-val">● ● ○</span></div>
+      </div>
+    </div>
+    <div class="model-card opus">
+      <div class="model-name">OPUS 4.6 / 4.7</div>
+      <div class="model-tag">Frontier · Deep Reasoning · Specialized</div>
+      <p class="model-desc">The most capable model. Use it when the problem is genuinely hard — multi-system design, long-horizon strategy, ambiguous situations requiring synthesis across many inputs. It is not a better version of Sonnet; it makes different tradeoffs.</p>
+      <div class="model-meta">
+        <div class="meta-row"><span class="meta-label">Best for</span><span class="meta-val">Complex, high-stakes reasoning</span></div>
+        <div class="meta-row"><span class="meta-label">Effort available</span><span class="meta-val">Low · Med · High · Max</span></div>
+        <div class="meta-row"><span class="meta-label">Relative cost</span><span class="meta-val">● ● ●</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">The Four Effort Levels</div>
+  <div class="effort-row">
+    <div class="effort-card low">
+      <div class="effort-label">Low</div>
+      <p class="effort-desc">Minimal internal reasoning. Claude responds from pattern recognition — fast, cheap, direct. Adequate when the answer is deterministic or shallow.</p>
+      <div class="effort-use">Formatting, retrieval, simple Q&A, boilerplate</div>
+    </div>
+    <div class="effort-card med">
+      <div class="effort-label">Medium</div>
+      <p class="effort-desc">A meaningful reasoning budget. Claude thinks through multi-step problems, catches edge cases, and self-checks. The recommended default for most professional work.</p>
+      <div class="effort-use">Drafting, summarizing, structured analysis, light strategy</div>
+    </div>
+    <div class="effort-card high">
+      <div class="effort-label">High</div>
+      <p class="effort-desc">Significantly more thinking tokens. Claude considers tradeoffs, flags ambiguity, and produces more nuanced output. Best balance of quality and cost for complex tasks.</p>
+      <div class="effort-use">Strategy docs, discovery work, complex editing, product reasoning</div>
+    </div>
+    <div class="effort-card max">
+      <div class="effort-label">Max</div>
+      <p class="effort-desc">No ceiling on thinking budget. Deep, multi-step reasoning across long, complex problems. Noticeably slower and most expensive — use deliberately, not habitually.</p>
+      <div class="effort-use">Architecture decisions, hardest analysis problems, genuinely novel reasoning</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>The most common mistake:</strong> using Opus + Max as a "safe default" for everything. This is roughly 5–8× more expensive than Sonnet + Medium on identical tasks, with no quality difference on routine work. Effort level has more impact than model choice for most everyday tasks.
+  </div>
+
+</div>
+
+<!-- TAB 2: GENERAL TASK GRID -->
+<div id="tab-general" class="tab-content">
+  <div class="callout">
+    This grid covers task archetypes broadly. The right pairing is always: use the <strong>cheapest model that produces acceptable output</strong>, and the <strong>lowest effort that preserves quality</strong>.
+  </div>
+
+  <div class="grid-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Task Type</th>
+          <th>Model</th>
+          <th>Effort</th>
+          <th>Why this pairing</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- SIMPLE -->
+        <tr>
+          <td><div class="task-name">Summarizing a document</div><div class="task-detail">Key points from a brief, report, or article</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td class="why-note">Retrieval + compression, not reasoning. Low effort is sufficient; Haiku works if volume is high.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Formatting / rewriting</div><div class="task-detail">Cleaning up copy, tone adjustment, restructuring prose</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td class="why-note">Pattern matching task. Sonnet over Haiku only for subtle tone judgment; Low effort is fine.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Simple Q&A / lookup</div><div class="task-detail">Factual questions, quick definitions, how-to</div></td>
+          <td><span class="badge badge-haiku">Haiku</span></td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td class="why-note">No reasoning depth needed. Haiku handles this category well and fastest.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Drafting emails / messages</div><div class="task-detail">Routine communications, follow-ups, stakeholder notes</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td class="why-note">Sonnet handles register and nuance better than Haiku; Low effort is adequate for routine drafts.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Drafting high-stakes comms</div><div class="task-detail">CEO messaging, investor notes, anything with political weight</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td class="why-note">Stakes warrant reasoning about tone/framing, not just generation. Medium lets Claude self-check.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Structured analysis</div><div class="task-detail">Pros/cons, scoring, comparison tables</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td class="why-note">Multiple dimensions to reason across. Medium is the right budget; Sonnet handles it without Opus.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Content creation</div><div class="task-detail">Blog posts, copy, documentation, social</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td class="why-note">Coherence across longer output benefits from a reasoning pass. Medium is the sweet spot.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Data analysis + interpretation</div><div class="task-detail">Metrics review, pattern ID, BI-style synthesis</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td class="why-note">Multi-step inference. Medium covers it; upgrade to High only if the domain is genuinely ambiguous.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Strategy documents</div><div class="task-detail">GTM plans, business cases, product strategy</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note">Requires holding multiple dimensions in tension. High effort lets Claude surface tradeoffs vs. just generating.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Product discovery / hypothesis work</div><div class="task-detail">Problem framing, solution scoring, validation design</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note">Ambiguous inputs, first-principles reasoning needed. High effort is justified here consistently.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Multi-source synthesis</div><div class="task-detail">Cross-referencing CRM data, research, Slack, Notion</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note">Reconciling conflicting signals requires sustained reasoning. High is the right floor here.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">System/architecture design</div><div class="task-detail">Complex technical or org design with many dependencies</div></td>
+          <td><span class="badge badge-opus">Opus</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note">Genuinely hard, multi-system reasoning. This is where Opus earns its cost differential.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Novel strategic analysis</div><div class="task-detail">Unprecedented situations, deep investor/exec-level reasoning</div></td>
+          <td><span class="badge badge-opus">Opus</span></td>
+          <td><span class="badge badge-max">Max</span></td>
+          <td class="why-note">Use sparingly. Max + Opus reserved for problems where a human expert would spend hours.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Code: simple scripts, edits</div><div class="task-detail">Minor functions, bug fixes, boilerplate</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td class="why-note">Deterministic output. Sonnet at Low handles most code tasks well without extended thinking.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Code: complex features / debugging</div><div class="task-detail">Multi-file logic, architecture decisions, non-obvious bugs</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note">Reasoning about edge cases and side effects benefits from High. Sonnet's SWE-bench score is near Opus here.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB 3: TARA'S WORK -->
+<div id="tab-tara" class="tab-content">
+
+  <div class="callout">
+    Based on what you've shared about your work at PI (RevOps + product strategy) and H2, here's a calibrated view of where you're likely burning credits unnecessarily — and where you might actually want to spend more.
+  </div>
+
+  <div class="section-label">RevOps · Marketing Ops · Sales Ops</div>
+  <div class="grid-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Your Task</th>
+          <th>Likely Current</th>
+          <th>Recommended</th>
+          <th>Effort</th>
+          <th>Notes + Credit Impact</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="task-name">Intake form copy editing</div><div class="task-detail">Asana request forms, stakeholder instructions</div></td>
+          <td><span class="badge badge-opus">Opus?</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td class="why-note"><span class="savings-flag">Likely savings</span> Copy editing is a Low pattern-match task. Sonnet at Low is more than sufficient and dramatically cheaper.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">HubSpot workflow documentation</div><div class="task-detail">Documenting enrollment rules, email trigger sequences</div></td>
+          <td><span class="badge badge-sonnet">Sonnet?</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td class="why-note">Structured transcription + formatting. Low effort is fine; the hard thinking is already done.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Nurture funnel reporting</div><div class="task-detail">Per-step metrics, enrollment rates, email engagement patterns</div></td>
+          <td><span class="badge badge-sonnet">Sonnet?</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td class="why-note">Pattern interpretation across multiple metrics warrants Medium. Don't go higher.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Slack messages to leadership</div><div class="task-detail">High-visibility communications (e.g. to CEO Lance)</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td class="why-note">Stakes are real but the task is communication craft, not reasoning depth. Medium is correct here.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Automation routing rules</div><div class="task-detail">Intake form logic, HubSpot triggers, Asana routing</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td class="why-note">Conditional logic benefits from Medium's self-checking. Sonnet handles automation design well.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Sprint stakeholder comms</div><div class="task-detail">Cross-team updates, sprint launch announcements</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td class="why-note"><span class="savings-flag">Potential savings</span> If you're running Medium here, drop to Low. Routine stakeholder updates don't need extended thinking.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-label">PI Product Discovery · GTM Strategy</div>
+  <div class="grid-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Your Task</th>
+          <th>Likely Current</th>
+          <th>Recommended</th>
+          <th>Effort</th>
+          <th>Notes + Credit Impact</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="task-name">Problem hypothesis framing</div><div class="task-detail">H2 problem rubric scoring, hypothesis generation</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note"><span class="warning-flag">Don't underinvest</span> If you're running this at Medium, bump to High. The quality difference in hypothesis framing is real.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Solution evaluation + scoring</div><div class="task-detail">H2 solution rubric runs, comparing candidates</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note">Multi-dimensional scoring with tradeoffs — High effort is justified. Sonnet handles this well; Opus rarely adds value here.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Behavioral API validation stack</div><div class="task-detail">Problem/solution hypotheses, paired test design, target account logic</div></td>
+          <td><span class="badge badge-opus">Opus?</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note"><span class="savings-flag">Likely savings</span> This work feels like it warrants Opus, but Sonnet at High matches the output quality for structured discovery at lower cost.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Cold outreach sighting shot design</div><div class="task-detail">Test design for VP Sales / Head of CX personas</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td class="why-note">Template-driven with clear inputs. Medium is right — it's more execution than discovery.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">PE risk-and-readiness product concept</div><div class="task-detail">Startup framing, behavioral signal layer, pre-role simulator</div></td>
+          <td><span class="badge badge-opus">Opus</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note"><span class="savings-flag">Likely savings</span> Novel framing, but it's within Sonnet's reasoning range at High effort. Reserve Opus for the sessions where you're synthesizing investor positioning logic across conflicting frameworks.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Workshop facilitation + scoring review</div><div class="task-detail">H2 group session output, comparing peer scores</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td class="why-note">Synthesis across structured inputs. Medium is right — this is aggregation + comparison, not deep novel reasoning.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">AI workforce redesign strategy</div><div class="task-detail">High-level org design, leadership-level framing</div></td>
+          <td><span class="badge badge-opus">Opus</span></td>
+          <td><span class="badge badge-opus">Opus</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note">One of the legitimate Opus cases. Multi-system, truly novel, high-stakes — but High effort (not Max) is still sufficient. Max is for when you're stuck.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">HubSpot TAM cross-reference</div><div class="task-detail">Target account lists vs CRM, account matching</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td class="why-note"><span class="savings-flag">Savings available</span> Data matching is structured and deterministic. Low effort is sufficient when the logic is defined.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-label">Restaurant / Multi-Unit Operator Work</div>
+  <div class="grid-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Your Task</th>
+          <th>Recommended</th>
+          <th>Effort</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="task-name">GM turnover product concept</div><div class="task-detail">Flight risk dashboard, simulator, in-shift coach framing</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note">Domain-specific but structured problem. Sonnet at High is strong here; the behavioral science grounding is well within its range.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Market research (GM communities)</div><div class="task-detail">Online community scan, persona-level signal gathering</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td class="why-note">Summarizing and synthesizing signal — Medium handles it cleanly without burning credits.</td>
+        </tr>
+        <tr>
+          <td><div class="task-name">Startup vs PI framing decisions</div><div class="task-detail">Positioning a concept independently to test product merit</div></td>
+          <td><span class="badge badge-sonnet">Sonnet</span></td>
+          <td><span class="badge badge-high">High</span></td>
+          <td class="why-note">Strategic framing that requires holding multiple positioning variables in tension. High is warranted.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- TAB 4: PRINCIPLES -->
+<div id="tab-principles" class="tab-content">
+
+  <div class="callout">
+    The decision framework in plain terms. Use this to reason about any task that doesn't appear in the grids.
+  </div>
+
+  <div class="principle-grid">
+    <div class="principle-card">
+      <div class="principle-title">Default to Sonnet + Medium</div>
+      <div class="principle-body">For anything you'd describe as "serious work," start here. Sonnet handles the vast majority of professional knowledge work. Medium gives Claude enough reasoning budget to catch errors and surface tradeoffs without the cost of deeper thinking. Only deviate with a reason.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-title">Effort matters more than model for most tasks</div>
+      <div class="principle-body">Sonnet at High often outperforms Opus at Low for reasoning tasks. The model tier determines baseline capability; the effort level determines how deeply it applies that capability to your specific problem. Don't buy a more expensive model when the real gap is effort.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-title">Upgrade to High when there's genuine ambiguity</div>
+      <div class="principle-body">If you've had to read the output twice and adjust it, that's usually a sign effort was too low — not that the model was wrong. High effort is where Claude flags tradeoffs and asks clarifying questions rather than committing to the most obvious interpretation.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-title">Opus is not a safety net</div>
+      <div class="principle-body">The common pattern is: "I don't want to waste time, so I'll just use the best model." That's the wrong mental model. Opus is a specialist, not a generalist that's just better. It's tuned for agentic, long-horizon, genuinely novel problems — not "good strategy work."</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-title">Max effort is a tool for being stuck</div>
+      <div class="principle-body">Max is what you reach for when High didn't produce satisfying output on a genuinely hard problem. It's not a premium experience — it's extended compute for extended problems. If you're using it habitually, you're paying for thinking tokens that aren't doing more work.</div>
+    </div>
+    <div class="principle-card">
+      <div class="principle-title">The 80/20 check for your work</div>
+      <div class="principle-body">Most of your PI/RevOps work is Sonnet + Low/Med. Most of your H2 discovery work is Sonnet + High. Opus earns its cost only in: AI workforce strategy, genuinely novel product positioning decisions, or any session where you're synthesizing across 5+ conflicting frameworks simultaneously.</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Quick heuristic:</strong> Before starting a task, ask — "Would a skilled analyst reach a conclusion on this in under 10 minutes with the right information?" If yes, that's Sonnet + Low or Med. If the analyst would need to sit with it, sketch it out, argue against their own view — that's High. If no analyst could do it in an hour without extensive domain expertise — that's Opus.
+  </div>
+
+</div>
+
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
